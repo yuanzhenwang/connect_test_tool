@@ -1,0 +1,13 @@
+{
+	"devices":"['24:71:89:E8:8D:07','24:71:89:B0:15:AB','CC:1B:E0:E8:08:16','FC:7A:15:41:2D:AC','E4:55:7E:48:08:BC']",
+	"device_type_name":"['Sleep',]",
+	"host":"http://172.16.40.200/api",
+	"user":"tester",
+	"pwd":"10b83f9a2e823c47",
+	"ap":"CC:1B:E0:E0:A8:6A",
+	"chip":0,
+	"local":"False",
+	"rssi_count":20,
+	"retry":2,
+	"auto_reconnect":"False"
+}
