@@ -198,7 +198,7 @@ def get_connect_state():
 
 
 def main(conf):
-    global SCANED_DEVICE, CHIP_FULL
+    global SCANED_DEVICE, CHIP_FULL, CONNECTED_DEVICE
     if len(sys.argv) == 1:
         # device = []
         if not os.path.exists('logs/info.csv'):
@@ -210,8 +210,10 @@ def main(conf):
                 for name in eval(names):
                     if name in data['name']:
                         print(data['name'])
-                        if data['bdaddrs'][0]['bdaddr'] in SCANED_DEVICE:
+                        if data['bdaddrs'][0]['bdaddr'] in SCANED_DEVICE:                       	
                             pass
+                        elif data['bdaddrs'][0]['bdaddr'] in CONNECTED_DEVICE:
+                        	CONNECTED_DEVICE.remove(data['bdaddrs'][0]['bdaddr'])
                         elif threading.active_count() < 10:
                             threading.Thread(target=auto_conn, args=(
                                 data['bdaddrs'][0]['bdaddr'], conf['chip'], conf['rssi_count'],
