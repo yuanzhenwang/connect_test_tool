@@ -215,9 +215,11 @@ def main(conf):
                         elif data['bdaddrs'][0]['bdaddr'] in CONNECTED_DEVICE:
                         	CONNECTED_DEVICE.remove(data['bdaddrs'][0]['bdaddr'])
                         elif threading.active_count() < 10:
-                            threading.Thread(target=auto_conn, args=(
+                            t = threading.Thread(target=auto_conn, args=(
                                 data['bdaddrs'][0]['bdaddr'], conf['chip'], conf['rssi_count'],
-                                conf['retry']), ).start()
+                                conf['retry']), )
+                            t.setDaemon(True)
+                            t.start()
                             SCANED_DEVICE.append(data['bdaddrs'][0]['bdaddr'])
                             print('扫描到新设备 %s.' % data['bdaddrs'][0]['bdaddr'])
                         break  # 退出for name循环
