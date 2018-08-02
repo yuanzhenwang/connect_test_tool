@@ -12,6 +12,8 @@
 
 	get      获取所有连接设备，后面无需任何参数
 
+	auto	 自动扫描一段时间统计扫描结果，然后开始连接设备。后面可选参数为结果目录，默认为logs目录
+
 
 help命令：
 
@@ -42,6 +44,12 @@ help命令：
 
 	"ap":"CC:1B:E0:E0:EB:3C"
 	AP的MAC地址，用来指定所用的AP，当调用本地API时该字段无效
+
+	"chip":0 or 1
+	配置扫描用的芯片
+
+	'scan_mode':0 or 1
+	配置扫描模式，0代表被动，1代表主动
 
 	"local":"False"
 	用来标识是用本地API还是云API，False用本地API，True用云端API

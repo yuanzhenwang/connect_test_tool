@@ -1,5 +1,8 @@
-import requests,time,threading
-import base64,json
+import requests
+import time
+import threading
+import base64
+import json
 import sseclient
 
 
@@ -11,13 +14,14 @@ class api():
         传参数update_header= True，让其自动更新heders
         默认不自动更新
     '''
+
     def __init__(self,
                  host,
-                 hub = None,        #调用API的AP mac地址，当本地调用时该参数无效
-                 user = None,       #AC上的开发者账号，本地调用时参数无效
-                 pwd = None,        #
-                 local=False,       #是否采用本地调用，默认为否
-                 model='E1000'      #AP的型号，E1000，X1000，S2000，S1000
+                 hub=None,  # 调用API的AP mac地址，当本地调用时该参数无效
+                 user=None,  # AC上的开发者账号，本地调用时参数无效
+                 pwd=None,        #
+                 local=False,  # 是否采用本地调用，默认为否
+                 model='E1000'  # AP的型号，E1000，X1000，S2000，S1000
                  ):
         self.host = host
         self.user = user
@@ -26,23 +30,23 @@ class api():
         self.model = model
         # print(self.host,self.user,self.pwd,self.hub,self.model)
         if local:
-            self.headers =None
+            self.headers = None
         else:
             self.set_header()
 
-
     def set_header(self):
-        use_info = self.user+':'+self.pwd
-        #编码开发者帐号
-        encode_info =base64.b64encode(use_info.encode('utf-8'))
+        use_info = self.user + ':' + self.pwd
+        # 编码开发者帐号
+        encode_info = base64.b64encode(use_info.encode('utf-8'))
         head = {
             'Content-Type': 'application/json',
-            'Authorization': 'Basic '+ encode_info.decode("utf-8")
+            'Authorization': 'Basic ' + encode_info.decode("utf-8")
         }
-        data = {'grant_type':'client_credentials'}
+        data = {'grant_type': 'client_credentials'}
         try:
-            #发起请求
-            res = requests.post(self.host + '/oauth2/token', data= json.dumps(data),headers = head)
+            # 发起请求
+            res = requests.post(self.host + '/oauth2/token',
+                                data=json.dumps(data), headers=head)
             # print(res.text,res.status_code)
             if res.status_code == 200:
                 res_body = json.loads(res.text)
@@ -56,9 +60,9 @@ class api():
             print(e)
             return
         headers = {
-          'Content-Type': 'application/json',
-          'version': '1',
-          'Authorization':'Bearer ' + TOKEN
+            'Content-Type': 'application/json',
+            'version': '1',
+            'Authorization': 'Bearer ' + TOKEN
         }
         self.headers = headers
         return headers
@@ -75,45 +79,46 @@ class api():
             device_mac = device[0]['bdaddr']	获取设备MAC
             device_type = device[0]['bdaddrType']	获取设备类型
     """
-    def scan(self,**args):
-        data = {"event":1,'mac':self.hub}
+
+    def scan(self, **args):
+        data = {"event": 1, 'mac': self.hub}
         if args:
             for key in args:
                 if args[key]:
                     data[key] = args[key]
         url = self.host + '/gap/nodes'
         try:
-            res = requests.get(url,params = data,headers = self.headers,stream =True)
+            res = requests.get(
+                url, params=data, headers=self.headers, stream=True)
             # print(res.url)
             if res.status_code == 200:
                 for line in res.iter_lines():
-                    scan_data = str(line,encoding = 'utf-8')
+                    scan_data = str(line, encoding='utf-8')
                     if scan_data.startswith('data'):
                         yield scan_data
             else:
                 yield res.text
         except Exception as e:
-                if 'NoneType' in str(e):
-                    pass
-                else:
-                    print('SSE closeed!',threading.current_thread().name,e)
+            if 'NoneType' in str(e):
+                pass
+            else:
+                print('SSE closeed!', threading.current_thread().name, e)
 
-    #SSE连接，参考scan接口
+    # SSE连接，参考scan接口
     def get_device_connect_state(self):
         url = self.host + '/management/nodes/connection-state'
-        data = {'mac':self.hub}
-        res =  requests.get(url, headers = self.headers,params = data,stream = True)
+        data = {'mac': self.hub}
+        res = requests.get(url, headers=self.headers, params=data, stream=True)
         if res.status_code == 200:
-            for msg in  res.iter_lines():
-                yield str(msg,encoding='utf8')
-
+            for msg in res.iter_lines():
+                yield str(msg, encoding='utf8')
 
     def connect_device(self, device: str, types: str = 'public', chip: int = None, timeout: int = None) -> str:
-        if chip ==None:
-            values={
+        if chip == None:
+            values = {
                 # 	timeout单位是ms
-                'timeout':timeout,
-                'type':types
+                'timeout': timeout,
+                'type': types
             }
         else:
             values = {
@@ -124,48 +129,49 @@ class api():
             }
         t_start = time.time()
         # url = self.host + '/gap/nodes/' + device + '/connection'
-        url =self.host + '/gap/nodes/'+device+'/connection?mac='+self.hub
+        url = self.host + '/gap/nodes/' + device + '/connection?mac=' + self.hub
         res = requests.post(url, json=values, headers=self.headers)
         # print(res.url)
         if res.status_code == 200:
             t_end = time.time()
             duration = (t_end - t_start)
             # print(self.hub,'--->',device,'duration(s):',duration,'| connected success!')
-            return res.status_code,res.text,duration
+            return res.status_code, res.text, duration
         else:
             t_end = time.time()
             duration = (t_end - t_start)
             # print(self.hub,'--->',device,'duration(s):',duration,'| connected failed! Reason:%s'%res.text)
-            return res.status_code,res.text,duration
+            return res.status_code, res.text, duration
 
-    def disconnect_device(self,device,timeout=5000):
-        data = {'mac':self.hub,'timeout':timeout}
-        url =self.host + '/gap/nodes/'+device+'/connection'
+    def disconnect_device(self, device, timeout=5000):
+        data = {'mac': self.hub, 'timeout': timeout}
+        url = self.host + '/gap/nodes/' + device + '/connection'
         t_start = time.time()
         res = requests.delete(url, params=data, headers=self.headers)
         if res.status_code == 200:
             t_end = time.time()
             duration = (t_end - t_start)
-            print('Device %s disconnect successed!'%device,duration)
-            return res.status_code,res.text
+            print('Device %s disconnect successed!' % device, duration)
+            return res.status_code, res.text
         else:
             t_end = time.time()
             duration = (t_end - t_start)
-            print(res.status_code,res.text,'\nDevice %s disconnect failed!'%device,duration)
-            return res.status_code,res.text
+            print(res.status_code, res.text,
+                  '\nDevice %s disconnect failed!' % device, duration)
+            return res.status_code, res.text
 
-    def get_devices_list(self,state):
-        data = {'mac':self.hub,
-                'connection_state':state
-            }
-        url =self.host + '/gap/nodes/'
-        res = requests.get(url, params = data, headers=self.headers)
+    def get_devices_list(self, state):
+        data = {'mac': self.hub,
+                'connection_state': state
+                }
+        url = self.host + '/gap/nodes/'
+        res = requests.get(url, params=data, headers=self.headers)
         if res.status_code == 200:
             # print('Get devices list successed:\n',res.text)
-            return (res.status_code,res.text)
+            return (res.status_code, res.text)
         else:
-            print(res.status_code,res.text)
-            return (res.status_code,res.text)
+            print(res.status_code, res.text)
+            return (res.status_code, res.text)
 
     '''
         下面四个函数返回值说明：
@@ -205,59 +211,61 @@ class api():
         discover_descriptors 函数返回某个特征值的描述值
 
     '''
-    def discovery_services(self,device,uuid=None):
+
+    def discovery_services(self, device, uuid=None):
         data = {
-        'mac':self.hub,
-        'uuid':uuid,
+            'mac': self.hub,
+            'uuid': uuid,
         }
-        url = self.host +'/gatt/nodes/'+device+'/services/'
-        res = requests.get(url,params = data,headers = self.headers)
+        url = self.host + '/gatt/nodes/' + device + '/services/'
+        res = requests.get(url, params=data, headers=self.headers)
         print(res.url)
         if res.status_code == 200:
-            print('Discovery services successed:\n',res.text)
-            return res.status_code,res.text
+            print('Discovery services successed:\n', res.text)
+            return res.status_code, res.text
         else:
-            print(res.status_code,res.text)
-            return res.status_code,res.text
+            print(res.status_code, res.text)
+            return res.status_code, res.text
 
-
-    def discovery_characteristics(self,device,service_uuid):
+    def discovery_characteristics(self, device, service_uuid):
         data = {
-        'mac':self.hub,
-        'all':1
+            'mac': self.hub,
+            'all': 1
         }
-        url = self.host + '/gatt/nodes/'+device+'/services/'+service_uuid+'/characteristics'
-        res = requests.get(url,params = data,headers = self.headers)
+        url = self.host + '/gatt/nodes/' + device + \
+            '/services/' + service_uuid + '/characteristics'
+        res = requests.get(url, params=data, headers=self.headers)
         if res.status_code == 200:
-            print('Discovery characteristics successed:\n',res.text)
-            return res.status_code,res.text
+            print('Discovery characteristics successed:\n', res.text)
+            return res.status_code, res.text
         else:
-            print(res.status_code,res.text)
-            return res.status_code,res.text
+            print(res.status_code, res.text)
+            return res.status_code, res.text
 
-    def discovery_charateristic(self,device,charater_uuid):
+    def discovery_charateristic(self, device, charater_uuid):
         data = {
-                "mac":self.hub,
-                "uuid":charater_uuid
+            "mac": self.hub,
+            "uuid": charater_uuid
         }
-        url = self.host + '/gatt/nodes/'+device+'/characteristics'
-        res = requests.get(url,params=data, headers = self.headers)
+        url = self.host + '/gatt/nodes/' + device + '/characteristics'
+        res = requests.get(url, params=data, headers=self.headers)
         if res.status_code == 200:
-            print('Discovery characteristic successed:\n',res.text)
-            return res.status_code,res.text
+            print('Discovery characteristic successed:\n', res.text)
+            return res.status_code, res.text
         else:
-            print(res.status_code,res.text)
-            return res.status_code,res.text
+            print(res.status_code, res.text)
+            return res.status_code, res.text
 
-    def discover_descriptors(self,device,charater_uuid):
-        url = self.host +'/gatt/nodes/'+device+'/characteristics/'+charater_uuid+'/descriptors?mac='+self.hub
-        res =  requests.get(url,headers = self.headers)
+    def discover_descriptors(self, device, charater_uuid):
+        url = self.host + '/gatt/nodes/' + device + '/characteristics/' + \
+            charater_uuid + '/descriptors?mac=' + self.hub
+        res = requests.get(url, headers=self.headers)
         if res.status_code == 200:
-            print('Discovery descriptors successed:\n',res.text)
-            return res.status_code,res.text
+            print('Discovery descriptors successed:\n', res.text)
+            return res.status_code, res.text
         else:
-            print(res.status_code,res.text)
-            return res.status_code,res.text
+            print(res.status_code, res.text)
+            return res.status_code, res.text
 
     '''
         This API returns the whole services & characteristics & desciptorsof the specified device
@@ -267,90 +275,94 @@ class api():
             discover_descriptors 函数返回某个服务下的某个特征值
             discover_descriptors 函数返回某个特征值的描述值
     '''
-    def discover_all(self,device):
-        data = {"mac":self.hub}
-        url = self.host + '/gatt/nodes/'+device+'/services/characteristics/descriptors'
-        res =  requests.get(url,params=data, headers = self.headers)
-        if res.status_code == 200:
-            print('Discovery all successed:\n',res.text)
-            return res.status_code,res.text
-        else:
-            print(res.status_code,res.text)
-            return res.status_code,res.text
 
-    def read_by_handle(self,device,handle):
-        data = {"mac":self.hub}
-        url = self.host + '/gatt/nodes/'+device+'/handle/'+str(handle)+'/value'
-        res =  requests.get(url,params=data, headers = self.headers)
+    def discover_all(self, device):
+        data = {"mac": self.hub}
+        url = self.host + '/gatt/nodes/' + device + \
+            '/services/characteristics/descriptors'
+        res = requests.get(url, params=data, headers=self.headers)
         if res.status_code == 200:
-            print('Read by handle successed:\n',res.text)
-            return res.status_code,res.text
+            print('Discovery all successed:\n', res.text)
+            return res.status_code, res.text
         else:
-            print(res.status_code,res.text)
-            return res.status_code,res.text
+            print(res.status_code, res.text)
+            return res.status_code, res.text
 
-    def write_by_handle(self,device,handle,handle_data):
-        data = {"mac":self.hub}
-        url = self.host+'/gatt/nodes/'+device+'/handle/'+str(handle)+'/value/'+str(handle_data)
-        res =  requests.get(url,params=data, headers = self.headers)
+    def read_by_handle(self, device, handle):
+        data = {"mac": self.hub}
+        url = self.host + '/gatt/nodes/' + device + \
+            '/handle/' + str(handle) + '/value'
+        res = requests.get(url, params=data, headers=self.headers)
         if res.status_code == 200:
-            print('Write by handle successed:\n',res.text)
-            return res.status_code,res.text
+            print('Read by handle successed:\n', res.text)
+            return res.status_code, res.text
         else:
-            print(res.status_code,res.text)
-            return res.status_code,res.text
+            print(res.status_code, res.text)
+            return res.status_code, res.text
 
-    #SSE连接，参考scan接口
+    def write_by_handle(self, device, handle, handle_data):
+        data = {"mac": self.hub}
+        url = self.host + '/gatt/nodes/' + device + '/handle/' + \
+            str(handle) + '/value/' + str(handle_data)
+        res = requests.get(url, params=data, headers=self.headers)
+        if res.status_code == 200:
+            print('Write by handle successed:\n', res.text)
+            return res.status_code, res.text
+        else:
+            print(res.status_code, res.text)
+            return res.status_code, res.text
+
+    # SSE连接，参考scan接口
     def recive_notification(self):
-        data={"mac":self.hub,
-            "event":1}
+        data = {"mac": self.hub,
+                "event": 1}
         url = self.host + '/gatt/nodes/'
-        res =  requests.get(url,headers = self.headers,params = data,stream = True)
+        res = requests.get(url, headers=self.headers, params=data, stream=True)
         return res
         # for line in res.iter_lines():
         # 	message = str(line,encoding = 'utf-8')
         # 	if message:
         # 		yield message
 
-    def start_advertise(self,chip,interval,adv_data,resp_data):
+    def start_advertise(self, chip, interval, adv_data, resp_data):
         data = {
-        'mac':self.hub,
-        'chip':chip,
-        'interval':interval,
-        'resp_data':resp_data
+            'mac': self.hub,
+            'chip': chip,
+            'interval': interval,
+            'resp_data': resp_data
         }
         url = self.host + '/advertise/start'
-        res =  requests.get(url,headers = self.headers,params = data)
+        res = requests.get(url, headers=self.headers, params=data)
         if res.status_code == 200:
-            print('Start advertise successed:\n',res.text)
-            return res.status_code,res.text
+            print('Start advertise successed:\n', res.text)
+            return res.status_code, res.text
         else:
-            print(res.status_code,res.text)
-            return res.status_code,res.text
+            print(res.status_code, res.text)
+            return res.status_code, res.text
 
-    def stop_advertise(self,chip):
+    def stop_advertise(self, chip):
         data = {
-                "mac":self.hub,
-                "chip":chip
+            "mac": self.hub,
+            "chip": chip
         }
-        url = self.host+'/advertise/stop'
-        res =  requests.get(url,headers = self.headers,params = data)
+        url = self.host + '/advertise/stop'
+        res = requests.get(url, headers=self.headers, params=data)
         if res.status_code == 200:
-            print('Stop advertise successed:\n',res.text)
-            return res.status_code,res.text
+            print('Stop advertise successed:\n', res.text)
+            return res.status_code, res.text
         else:
-            print(res.status_code,res.text)
-            return res.status_code,res.text
+            print(res.status_code, res.text)
+            return res.status_code, res.text
 
 if __name__ == '__main__':
     host = 'http://168.168.30.253/api'
     dev = 'EC:6F:47:BD:33:95'
-    api = api(host,'CC:1B:E0:E0:DC:68','tester','10b83f9a2e823c47')
+    api = api(host, 'CC:1B:E0:E0:DC:68', 'tester', '10b83f9a2e823c47')
     # for x in api.scan():print(x)
     res = api.get_device_connect_state()
     for msg in res:
         print(msg)
-    api.connect_device(dev,'random')
+    api.connect_device(dev, 'random')
     x = api.get_devices_list('connected')[1]
     print(dev in x)
     api.disconnect_device('EC:6F:47:BD:33:95')
