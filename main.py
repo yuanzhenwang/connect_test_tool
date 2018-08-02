@@ -466,7 +466,8 @@ def main():
         dis_all(api)
     elif sys.argv[1] == 'conn':
         devs = eval(conf['devices'])  # 转换成列表
-        t = threading.Thread(target=conn, args=(devs, conf['chip'], conf['retry']))
+        t = threading.Thread(target=conn, args=(
+            devs, conf['chip'], conf['retry']))
         t.setDaemon(True)
         t.start()
     elif sys.argv[1] == 'get':
@@ -490,8 +491,8 @@ def main():
             print('%-15s%-30s' % (a, b))
         sys.exit(0)
     try:
-        # 监听程序退出事件
         while not EXIT:
+            # 监听程序退出
             time.sleep(1)
     except KeyboardInterrupt:
         print('检测到CTRL-C，正在保存数据，稍后退出....')
