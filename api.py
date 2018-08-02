@@ -30,8 +30,10 @@ class api():
         self.model = model
         # print(self.host,self.user,self.pwd,self.hub,self.model)
         if local:
+            self.local = True
             self.headers = None
         else:
+            self.local = False
             self.set_header()
 
     def set_header(self):
@@ -88,8 +90,12 @@ class api():
                     data[key] = args[key]
         url = self.host + '/gap/nodes'
         try:
-            res = requests.get(
-                url, params=data, headers=self.headers, stream=True)
+            if not self.local:
+                res = requests.get(
+                    url, params=data, headers=self.headers, stream=True)
+            else:
+                res = requests.get(
+                    url, params=data, stream=True)
             # print(res.url)
             if res.status_code == 200:
                 for line in res.iter_lines():
@@ -113,8 +119,8 @@ class api():
             for msg in res.iter_lines():
                 yield str(msg, encoding='utf8')
 
-    def connect_device(self, device: str, types: str = 'public', chip: int = None, timeout: int = None) -> str:
-        if chip == None:
+    def connect_device(self, device, types='public', chip=None, timeout: int = None) -> str:
+        if chip is None:
             values = {
                 # 	timeout单位是ms
                 'timeout': timeout,
@@ -128,9 +134,12 @@ class api():
                 "chip": chip
             }
         t_start = time.time()
-        # url = self.host + '/gap/nodes/' + device + '/connection'
-        url = self.host + '/gap/nodes/' + device + '/connection?mac=' + self.hub
-        res = requests.post(url, json=values, headers=self.headers)
+        if not self.local:
+            url = self.host + '/gap/nodes/' + device + '/connection?mac=' + self.hub
+            res = requests.post(url, json=values, headers=self.headers)
+        else:
+            url = self.host + '/gap/nodes/' + device + '/connection?mac='
+            res = requests.post(url, json=values)
         # print(res.url)
         if res.status_code == 200:
             t_end = time.time()
@@ -147,7 +156,10 @@ class api():
         data = {'mac': self.hub, 'timeout': timeout}
         url = self.host + '/gap/nodes/' + device + '/connection'
         t_start = time.time()
-        res = requests.delete(url, params=data, headers=self.headers)
+        if not self.local:
+            res = requests.delete(url, params=data, headers=self.headers)
+        else:
+            res = requests.delete(url, params=data)
         if res.status_code == 200:
             t_end = time.time()
             duration = (t_end - t_start)
@@ -165,7 +177,10 @@ class api():
                 'connection_state': state
                 }
         url = self.host + '/gap/nodes/'
-        res = requests.get(url, params=data, headers=self.headers)
+        if not self.local:
+            res = requests.get(url, params=data, headers=self.headers)
+        else:
+            res = requests.get(url, params=data)
         if res.status_code == 200:
             # print('Get devices list successed:\n',res.text)
             return (res.status_code, res.text)

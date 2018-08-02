@@ -434,7 +434,11 @@ def scan_config_dev(path):
 def main():
     global SCANED_DEVICE, CONNECTED_DEVICE, api, PATH
     conf = get_conf()
-    api = api(conf['host'], conf['ap'], conf['user'], conf['pwd'])
+    local = int(conf['local'])
+    if not local:
+        api = api(conf['host'], conf['ap'], conf['user'], conf['pwd'])
+    else:
+        api = api(conf['local_host'], local=True)
     # if conf['auto_reconnect'] == 'True':
     #     # 判断是否开启自动重连
     #     threading.Thread(target=get_connect_state).start()

@@ -51,8 +51,11 @@ help命令：
 	'scan_mode':0 or 1
 	配置扫描模式，0代表被动，1代表主动
 
-	"local":"False"
-	用来标识是用本地API还是云API，False用本地API，True用云端API
+	"local_host":http://AP IP address
+	配置本地扫扫描使用的IP地址
+
+	"local":0 | 1
+	用来标识是用本地API还是云API，1用本地API，0用云端API
 
 	"rssi_count":10
 	设置开始连接设备收集多少个RSSI计算RSSI平均值
